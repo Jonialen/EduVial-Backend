@@ -17,7 +17,6 @@ const validate = (req, res, next) => {
   logger.warn('Errores de validación de entrada:', { errors: extractedErrors });
 
   // Lanzar un error operacional que será capturado por el manejador global
-  // Usamos 422 Unprocessable Entity, que es semánticamente adecuado para errores de validación
   return next(new AppError('Datos de entrada inválidos.', 422, { errors: extractedErrors }));
 };
 
@@ -40,10 +39,13 @@ const registerRules = () => {
       .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres.'),
       // Podrías añadir más validaciones de contraseña aquí (e.g., complejidad)
 
+    // --- INICIO: Cambio en Role ---
     body('role')
-      .optional() // El rol es opcional en la entrada
+      // .optional() // <--- SE ELIMINA ESTO
       .trim()
+      .notEmpty().withMessage('El rol es obligatorio.') // <--- SE AÑADE ESTO
       .isIn(['admin', 'principiante', 'avanzado']).withMessage('Rol inválido. Debe ser admin, principiante o avanzado.')
+    // --- FIN: Cambio en Role ---
   ];
 };
 
