@@ -21,17 +21,19 @@
   "homepage": "https://github.com/Jonialen/EduVial-Backend#readme",
   "devDependencies": {
     "eslint": "^9.24.0",
-    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "sequelize-cli": "^6.6.2",
     "supertest": "^7.1.0"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
     "pg": "^8.14.1",
     "sequelize": "^6.37.7",
     "winston": "^3.17.0"

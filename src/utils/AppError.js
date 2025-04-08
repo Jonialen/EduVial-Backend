@@ -1,22 +1,12 @@
-// src/utils/AppError.js
-
-/**
- * Clase personalizada para manejar errores operacionales de forma controlada.
- * Permite asignar un mensaje y un código de estado HTTP.
- */
+// EduVial-Backend/src/utils/AppError.js
 class AppError extends Error {
-  /**
-   * Crea una instancia de AppError.
-   * @param {string} message - El mensaje de error para el cliente.
-   * @param {number} statusCode - El código de estado HTTP (ej. 400, 401, 404, 500).
-   */
   constructor(message, statusCode) {
-    super(message); // Llama al constructor de la clase base (Error)
+    super(message); // Llama al constructor de la clase Error
 
     this.statusCode = statusCode;
-    // Determina el estado ('fail' para 4xx, 'error' para 5xx)
+    // Determina el status basado en el statusCode
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-    // Marca este error como operacional (un problema esperado, no un bug de programación)
+    // Marca errores operacionales (predecibles) vs bugs de programación
     this.isOperational = true;
 
     // Captura el stack trace, excluyendo el constructor de AppError

@@ -1,0 +1,16 @@
+// EduVial-Backend/.sequelizerc
+const path = require('path');
+
+module.exports = {
+  // Ruta al archivo de configuración de Sequelize
+  'config': path.resolve('src', 'config', 'database.js'),
+
+  // Ruta a la carpeta que contiene los modelos
+  'models-path': path.resolve('src', 'database', 'models'), // <-- Dentro de src/database
+
+  // Ruta a la carpeta que contiene los seeders
+  'seeders-path': path.resolve('src', 'database', 'seeders'), // <-- Dentro de src/database
+
+  // Ruta a la carpeta que contiene las migraciones
+  'migrations-path': path.resolve('src', 'database', 'migrations') // <-- Dentro de src/database
+};

@@ -3,7 +3,7 @@ const { Sequelize } = require('sequelize');
 const config = require('./index');
 
 // Validación de configuración de DB antes de intentar conectar
-if (!config.db.database || !config.db.user || !config.db.password || !config.db.host) {
+if (!config.db.database || !config.db.username || !config.db.password || !config.db.host) {
     console.error("ERROR: Faltan detalles de conexión a la base de datos en la configuración.");
     // Decide si salir o permitir que la aplicación continúe sin conexión DB
     // process.exit(1); // Descomenta para salir si la DB es indispensable
@@ -11,7 +11,7 @@ if (!config.db.database || !config.db.user || !config.db.password || !config.db.
 
 const sequelize = new Sequelize(
     config.db.database,
-    config.db.user,
+    config.db.username,
     config.db.password,
     {
         host: config.db.host,

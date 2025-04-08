@@ -1,20 +1,20 @@
-// src/routes/index.js
+// EduVial-Backend/src/routes/index.js
 const express = require('express');
 const authRoutes = require('./auth.routes');
-// Importa otros archivos de rutas aquí a medida que los crees
+// Importa otros archivos de rutas aquí cuando los necesites
 // const userRoutes = require('./user.routes');
 
 const router = express.Router();
 
-// Ruta de bienvenida o estado de la API (opcional)
+// Ruta base de la API para verificar que funciona
 router.get('/', (req, res) => {
-    res.json({ message: 'Bienvenido a la API de EduVial v1' });
+  res.json({ message: 'Bienvenido a la API de EduVial v1' });
 });
 
-// Monta las rutas de autenticación bajo el prefijo /auth
+// Montar las rutas de autenticación
 router.use('/auth', authRoutes);
 
-// Monta otras rutas aquí
+// Montar otras rutas
 // router.use('/users', userRoutes);
 
 module.exports = router;

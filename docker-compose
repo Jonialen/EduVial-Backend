@@ -1,0 +1,35 @@
+# EduVial-Backend/docker-compose.yml
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      target: development # Usa 'production' para builds de producción
+    container_name: eduvial_backend_dev # Cambia para prod
+    env_file:
+      - .env # Carga variables desde .env
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}" # Mapea puerto host:container
+    volumes:
+      # Monta el código fuente para desarrollo con hot-reload
+      - ./src:/usr/src/app/src
+      # Monta archivos clave de configuración y dependencias
+      - ./package.json:/usr/src/app/package.json
+      - ./package-lock.json:/usr/src/app/package-lock.json
+      # Considera montar .env si necesitas cambios rápidos sin rebuild, pero ten cuidado con secretos
+      # - ./.env:/usr/src/app/.env
+      # Volumen anónimo para node_modules para evitar sobreescribir los de la imagen
+      - /usr/src/app/node_modules
+      # Si creas logs en archivos, mapea la carpeta de logs
+      # - ./logs:/usr/src/app/logs
+    # Necesario en Linux para que host.docker.internal funcione
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Reinicio automático en caso de fallo (útil en producción)
+    # restart: unless-stopped
+    # Comando por defecto (ya definido en la etapa 'development' del Dockerfile)
+    # command: npm run dev
+
+# Puedes añadir otros servicios aquí si fuera necesario (e.g., Redis, etc.)
+# No añadimos el servicio 'db' porque es externo.

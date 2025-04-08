@@ -1,78 +1,116 @@
-// src/app.js
+// EduVial-Backend/src/app.js
 const express = require('express');
-const config = require('./config');
-const { connectDB, sequelize } = require('./config/db');
-const routesV1 = require('./routes'); // Importa el enrutador principal de /src/routes/index.js
-const AppError = require('./utils/AppError'); // Asegúrate de crear este archivo
+const morgan = require('morgan'); // Middleware para logging de requests HTTP
+const helmet = require('helmet'); // Middleware para seguridad básica de cabeceras HTTP
+const cors = require('cors'); // Middleware para habilitar Cross-Origin Resource Sharing
 
-// Importa modelos para asegurar que Sequelize los conozca (especialmente si tienen asociaciones)
-require('./models/user.model');
+const config = require('./config/config');
+const logger = require('./config/logger');
+const { sequelize } = require('./database/models'); // Importa la instancia de Sequelize
+const AppError = require('./utils/AppError');
+const globalErrorHandler = require('./middlewares/errorHandler');
+const notFoundHandler = require('./middlewares/notFoundHandler');
+const apiRoutes = require('./routes/index'); // Importa el enrutador principal
 
+// --- Inicializar Express ---
 const app = express();
-const PORT = config.port;
 
-// Middlewares globales
-app.use(express.json({ limit: '10kb' })); // Limita tamaño del payload JSON
-app.use(express.urlencoded({ extended: true, limit: '10kb' })); // Limita tamaño payload URL-encoded
+// --- Conectar a la Base de Datos ---
+sequelize.authenticate()
+  .then(() => {
+    logger.info('Conexión a la base de datos establecida correctamente.');
+    // Podrías sincronizar modelos aquí SOLO en desarrollo si la BD es tuya:
+    // if (config.env === 'development') {
+    //   sequelize.sync({ force: false }) // force: true RECREA las tablas
+    //     .then(() => logger.info('Modelos sincronizados con la base de datos.'))
+    //     .catch(err => logger.error('Error al sincronizar modelos:', err));
+    // }
+  })
+  .catch(err => {
+    logger.error('No se pudo conectar a la base de datos:', err);
+    // Considera salir de la aplicación si la conexión a la BD es crítica al inicio
+    // process.exit(1);
+  });
 
-// Rutas de la API v1
-app.use('/api/v1', routesV1);
+// --- Middlewares Globales ---
+// Seguridad HTTP básica
+app.use(helmet());
 
-// Middleware para manejar rutas no encontradas (404)
-// Se ejecuta si ninguna ruta anterior coincide
-app.all('*', (req, res, next) => {
-    next(new AppError(`No se pudo encontrar la ruta ${req.originalUrl} en este servidor.`, 404));
+// Habilitar CORS (configura orígenes permitidos en producción)
+app.use(cors());
+// Ejemplo configuración CORS más específica:
+// app.use(cors({
+//   origin: 'http://tu-frontend.com', // Reemplaza con el origen de tu frontend
+//   methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+//   allowedHeaders: 'Content-Type,Authorization'
+// }));
+
+// Parsear JSON y URL-encoded bodies
+app.use(express.json({ limit: '10kb' })); // Limitar tamaño de payload JSON
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Logging de solicitudes HTTP usando Morgan y Winston
+// 'combined' es un formato estándar, puedes usar 'dev' para desarrollo
+app.use(morgan(config.env === 'development' ? 'dev' : 'combined', { stream: logger.stream }));
+
+
+// --- Rutas de API ---
+app.use('/api', apiRoutes); // Montar todas las rutas bajo /api
+
+// --- Rutas de Health Check ---
+app.get('/health', (req, res) => {
+    // Podría incluir chequeo de BD aquí si es necesario
+    res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
+});
+app.get('/', (req, res) => {
+    res.status(200).send(`EduVial Backend (${config.env}) está corriendo en el puerto ${config.port}!`);
 });
 
-// Middleware global para manejo de errores
-// ¡Importante! Debe tener 4 argumentos (err, req, res, next) para ser reconocido como manejador de errores
-app.use((err, req, res, next) => {
-    // Log del error (considera usar Winston aquí para logs más avanzados)
-    console.error('ERROR 💥:', err);
+// --- Manejo de Rutas No Encontradas ---
+// Debe ir DESPUÉS de todas tus rutas de API
+app.use(notFoundHandler);
 
-    // Establece el statusCode y status basados en el error si es un AppError, sino 500
-    err.statusCode = err.statusCode || 500;
-    err.status = err.status || 'error';
+// --- Manejador Global de Errores ---
+// ¡Debe ser el ÚLTIMO middleware que se añade!
+app.use(globalErrorHandler);
 
-    // Envía la respuesta de error
-    res.status(err.statusCode).json({
-        status: err.status,
-        message: err.isOperational ? err.message : 'Algo salió muy mal!', // Mensaje genérico para errores no operacionales
-        // stack: process.env.NODE_ENV === 'development' ? err.stack : undefined // Muestra el stack solo en desarrollo
-    });
-});
-
-
-// Función para iniciar el servidor
-const startServer = async () => {
-    try {
-        await connectDB(); // 1. Conecta a la base de datos
-
-        // 2. Opcional: Sincronizar modelos (solo en desarrollo o para configuración inicial)
-        // ¡NO USAR EN PRODUCCIÓN CON DATOS REALES! Usar migraciones en su lugar.
-        if (process.env.NODE_ENV === 'development') {
-           // await sequelize.sync({ alter: true }); // alter: true intenta modificar tablas existentes
-           // await sequelize.sync({ force: true }); // force: true BORRA y recrea tablas
-           // console.log("Modelos sincronizados con la base de datos (alter: true).");
-        }
-
-        // 3. Inicia el servidor Express
-        app.listen(PORT, () => {
-            console.log(`🚀 Servidor EduVial-Backend escuchando en http://localhost:${PORT}`);
-            console.log(`Entorno actual: ${process.env.NODE_ENV || 'development'}`);
-        });
-
-    } catch (error) {
-        console.error("🚨 Error fatal al iniciar el servidor:", error);
-        process.exit(1); // Salir de la aplicación si hay un error crítico al inicio
-    }
+// --- Manejo de Señales y Errores No Capturados ---
+const unexpectedErrorHandler = (error) => {
+    logger.error('ERROR INESPERADO!', error);
+    // Aquí podrías intentar cerrar el servidor de forma elegante antes de salir
+    // server.close(() => {
+    //     logger.info('Servidor cerrado debido a error inesperado.');
+    //     process.exit(1);
+    // });
+    // Forzar salida si el cierre elegante falla después de un tiempo
+    // setTimeout(() => process.exit(1), 10000).unref();
+    process.exit(1); // Salida directa por ahora
 };
 
-// Verifica si el archivo se ejecuta directamente (node src/app.js) para iniciar el servidor
-// Esto permite importar 'app' en otros archivos (como tests) sin iniciar el servidor automáticamente.
-if (require.main === module) {
-    startServer();
-}
+process.on('uncaughtException', unexpectedErrorHandler);
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('RECHAZO DE PROMESA NO MANEJADO!', { reason, promise });
+    // Lanza el error para que uncaughtException lo maneje y cierre
+    throw reason;
+});
 
-// Exporta 'app' para poder usarla en tests con supertest
-module.exports = app;
+// Manejo de señales de terminación (e.g., de Docker o systemd)
+process.on('SIGTERM', () => {
+    logger.info('Señal SIGTERM recibida. Cerrando servidor elegantemente...');
+    // server.close(() => { // Necesitas exportar 'server' desde abajo
+    //     logger.info('Servidor HTTP cerrado.');
+    //     // Cierra la conexión de BD si es necesario
+    //     sequelize.close().then(() => logger.info('Conexión a BD cerrada.'));
+    //     process.exit(0); // Salida limpia
+    // });
+    process.exit(0); // Salida directa por ahora
+});
+
+
+// --- Iniciar el Servidor ---
+const server = app.listen(config.port, () => {
+  logger.info(`Servidor escuchando en http://localhost:${config.port} en modo ${config.env}`);
+});
+
+// Exportar app y server si se necesitan para tests o manejo de señales
+module.exports = { app, server }; // Exportar server es útil para el cierre elegante
