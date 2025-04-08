@@ -1,8 +1,7 @@
-// EduVial-Backend/src/routes/index.js
+// src/routes/index.js
 const express = require('express');
 const authRoutes = require('./auth.routes');
-// Importa otros archivos de rutas aquí cuando los necesites
-// const userRoutes = require('./user.routes');
+const incidenteRoutes = require('./incidente.routes'); // Si lo necesitas
 
 const router = express.Router();
 
@@ -13,8 +12,7 @@ router.get('/', (req, res) => {
 
 // Montar las rutas de autenticación
 router.use('/auth', authRoutes);
-
-// Montar otras rutas
-// router.use('/users', userRoutes);
+// Montar las rutas de incidentes
+router.use('/incidentes', incidenteRoutes);
 
 module.exports = router;
