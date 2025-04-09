@@ -46,7 +46,7 @@ app.use(cors());
 // }));
 
 // Parsear JSON y URL-encoded bodies
-app.use(express.json({ limit: '10kb' })); // Limitar tamaño de payload JSON
+app.use(express.json()); // Limitar tamaño de payload JSON
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Logging de solicitudes HTTP usando Morgan y Winston

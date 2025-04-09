@@ -66,6 +66,14 @@ const globalErrorHandler = (err, req, res, next) => {
   // Asegurar que statusCode y status tengan valores por defecto
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
+  
+  // --- DEBUG INFO ---
+  logger.debug(`[DEBUG] Request originalUrl: ${req.originalUrl}`);
+  logger.debug(`[DEBUG] Request body: ${JSON.stringify(req.body)}`);
+  logger.debug(`[DEBUG] Request params: ${JSON.stringify(req.params)}`);
+  logger.debug(`[DEBUG] Request query: ${JSON.stringify(req.query)}`);
+  logger.debug(`[DEBUG] Error recibido: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+  // ---------------
 
   let error = { ...err }; // Clonar el error
   error.message = err.message; // Asegurar que el mensaje se copie
