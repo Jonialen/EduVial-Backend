@@ -74,4 +74,4 @@ const server = app.listen(config.port, () => {
   logger.info(`🚀 Servidor escuchando en http://localhost:${config.port} en modo ${config.env}`);
 });
 
-module.exports = { app, server }; // SI VAS A CORREGIR ALGO DAME TODOS LOS CODIGOS COMPLETOS
+module.exports = { app, server }; 
