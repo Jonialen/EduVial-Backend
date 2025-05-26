@@ -44,13 +44,12 @@ model app_user {
   user_score           user_score[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model exam {
-  exam_id          Int             @id @default(autoincrement())
-  title            String          @db.VarChar(255)
+  exam_id          Int                   @id @default(autoincrement())
+  title            String                @db.VarChar(255)
   description      String?
-  difficulty_level String          @db.VarChar(50)
-  points_awarded   Int             @default(0)
+  difficulty_level difficulty_level_enum
+  points_awarded   Int                   @default(0)
   exam_progress    exam_progress[]
   exam_question    exam_question[]
   exam_result      exam_result[]
@@ -117,12 +116,11 @@ model leaderboard {
   app_user       app_user @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model lesson {
   lesson_id           Int                   @id @default(autoincrement())
   title               String                @db.VarChar(255)
   description         String?
-  difficulty_level    String                @db.VarChar(50)
+  difficulty_level    difficulty_level_enum
   points_awarded      Int                   @default(0)
   lesson_category_rel lesson_category_rel[]
   lesson_result       lesson_result[]
@@ -231,6 +229,11 @@ model user_score {
   user_id      Int
   total_points Int?     @default(0)
   app_user     app_user @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum difficulty_level_enum {
+  simple
+  advanced
 }
 
 enum progress_status_enum {
