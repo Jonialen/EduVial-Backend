@@ -1,48 +1,63 @@
-// EduVial-Backend/src/controllers/auth.controller.js
-const authService = require('../services/auth.service');
-const logger = require('../config/logger');
-// AppError no se lanza directamente aquí si confiamos en el servicio/validator y el errorHandler global
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import prisma from '../prisma/client.js';
 
-const register = async (req, res, next) => {
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_TIME = process.env.JWT_TIME
+
+// POST /api/auth/register
+export const register = async (req, res) => {
   try {
-    // La validación ya se hizo en el middleware 'validate'
-    logger.info(`Recibida solicitud de registro para: ${req.body.email}`);
-    const newUser = await authService.registerUser(req.body);
+    const { email, password, name, role = 'principiante' } = req.body;
 
-    // Respuesta exitosa (201 Created)
-    res.status(201).json({
-      status: 'success',
-      message: 'Usuario registrado exitosamente.',
+    const existing = await prisma.app_user.findUnique({ where: { email } });
+    if (existing) return res.status(400).json({ message: 'Email ya registrado' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.app_user.create({
       data: {
-        user: newUser, // El método toJSON del modelo ya quita la contraseña
+        name,
+        email,
+        password: hashedPassword,
+        role, // debe coincidir con los valores de tu ENUM
       },
     });
-  } catch (error) {
-    // Pasa el error al manejador global de errores
-    // Express 5 maneja errores async por defecto, pero next(error) es explícito
-    next(error);
+
+    const token = jwt.sign(
+      { userId: user.user_id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.status(201).json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al registrar' });
   }
 };
 
-const login = async (req, res, next) => {
+// POST /api/auth/login
+export const login = async (req, res) => {
   try {
-    // La validación ya se hizo en el middleware 'validate'
-    logger.info(`Recibida solicitud de login para: ${req.body.email}`);
-    const result = await authService.loginUser(req.body);
+    const { email, password } = req.body;
 
-    // Respuesta exitosa (200 OK)
-    res.status(200).json({
-      status: 'success',
-      message: 'Login exitoso.',
-      data: result, // Contiene token y user (sin contraseña)
-    });
-  } catch (error) {
-    // Pasa el error al manejador global de errores
-    next(error);
+    const user = await prisma.app_user.findUnique({ where: { email } });
+    if (!user) return res.status(401).json({ message: 'Credenciales inválidas' });
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) return res.status(401).json({ message: 'Credenciales inválidas' });
+
+    const token = jwt.sign(
+      { userId: user.user_id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al iniciar sesión' });
   }
 };
 
-module.exports = {
-  register,
-  login,
-};

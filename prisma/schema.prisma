@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ans {
+  id       Int       @id @default(autoincrement())
+  uid      Int?
+  qid      Int?
+  optid    Int?
+  correct  Boolean?
+  ts       DateTime? @default(now()) @db.Timestamp(6)
+  opt      opt?      @relation(fields: [optid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  quest    quest?    @relation(fields: [qid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  app_user app_user? @relation(fields: [uid], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model answer_option {
+  option_id   Int      @id @default(autoincrement())
+  question_id Int
+  option_text String?
+  is_correct  Boolean?
+  question    question @relation(fields: [question_id], references: [question_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model app_user {
+  user_id              Int                    @id @default(autoincrement())
+  name                 String                 @db.VarChar(100)
+  email                String                 @unique @db.VarChar(100)
+  password             String                 @db.Char(60)
+  role                 user_role_enum
+  ans                  ans[]
+  exam_progress        exam_progress[]
+  exam_result          exam_result[]
+  leaderboard          leaderboard[]
+  lesson_result        lesson_result[]
+  notification_history notification_history[]
+  progress             progress[]
+  reward_redemption    reward_redemption[]
+  user_score           user_score[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model exam {
+  exam_id          Int             @id @default(autoincrement())
+  title            String          @db.VarChar(255)
+  description      String?
+  difficulty_level String          @db.VarChar(50)
+  points_awarded   Int             @default(0)
+  exam_progress    exam_progress[]
+  exam_question    exam_question[]
+  exam_result      exam_result[]
+}
+
+model exam_progress {
+  exam_progress_id Int                  @id @default(autoincrement())
+  user_id          Int
+  exam_id          Int
+  status           progress_status_enum @default(no_completado)
+  completion_date  DateTime?            @db.Timestamp(6)
+  exam             exam                 @relation(fields: [exam_id], references: [exam_id], onDelete: NoAction, onUpdate: NoAction)
+  app_user         app_user             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model exam_question {
+  exam_id     Int
+  question_id Int
+  exam        exam     @relation(fields: [exam_id], references: [exam_id], onDelete: NoAction, onUpdate: NoAction)
+  question    question @relation(fields: [question_id], references: [question_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([exam_id, question_id])
+}
+
+model exam_result {
+  exam_result_id Int       @id @default(autoincrement())
+  user_id        Int
+  exam_id        Int
+  score          Int
+  date           DateTime? @default(now()) @db.Timestamp(6)
+  exam           exam      @relation(fields: [exam_id], references: [exam_id], onDelete: NoAction, onUpdate: NoAction)
+  app_user       app_user  @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model lawartcat {
+  id         Int         @id @default(autoincrement())
+  artid      Int?
+  catid      Int?
+  lawarticle lawarticle? @relation(fields: [artid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lawcat     lawcat?     @relation(fields: [catid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model lawarticle {
+  id        Int         @id @default(autoincrement())
+  artnum    String      @db.VarChar(10)
+  title     String      @db.VarChar(255)
+  descr     String
+  sanc      String?
+  lawartcat lawartcat[]
+  quest     quest[]
+}
+
+model lawcat {
+  id        Int         @id @default(autoincrement())
+  name      String      @db.VarChar(255)
+  lawartcat lawartcat[]
+}
+
+model leaderboard {
+  leaderboard_id Int      @id @default(autoincrement())
+  user_id        Int
+  position       Int
+  total_points   Int
+  app_user       app_user @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model lesson {
+  lesson_id           Int                   @id @default(autoincrement())
+  title               String                @db.VarChar(255)
+  description         String?
+  difficulty_level    String                @db.VarChar(50)
+  points_awarded      Int                   @default(0)
+  lesson_category_rel lesson_category_rel[]
+  lesson_result       lesson_result[]
+  progress            progress[]
+}
+
+model lesson_category {
+  category_id         Int                   @id @default(autoincrement())
+  category_name       String                @unique @db.VarChar(100)
+  lesson_category_rel lesson_category_rel[]
+}
+
+model lesson_category_rel {
+  lesson_id       Int
+  category_id     Int
+  lesson_category lesson_category @relation(fields: [category_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction)
+  lesson          lesson          @relation(fields: [lesson_id], references: [lesson_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([lesson_id, category_id])
+}
+
+model lesson_result {
+  lesson_result_id Int       @id @default(autoincrement())
+  user_id          Int
+  lesson_id        Int
+  score            Int
+  date             DateTime? @default(now()) @db.Timestamp(6)
+  lesson           lesson    @relation(fields: [lesson_id], references: [lesson_id], onDelete: NoAction, onUpdate: NoAction)
+  app_user         app_user  @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model log {
+  log_id         Int      @id @default(autoincrement())
+  timestamp      DateTime @default(now()) @db.Timestamp(6)
+  username       String   @db.VarChar(100)
+  affected_table String   @db.VarChar(100)
+  operation      String   @db.VarChar(50)
+  details        String?
+}
+
+model notification_history {
+  notification_id Int       @id @default(autoincrement())
+  user_id         Int
+  message         String?
+  sent_date       DateTime? @db.Timestamp(6)
+  app_user        app_user  @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model opt {
+  id      Int     @id @default(autoincrement())
+  qid     Int?
+  txt     String
+  correct Boolean
+  ans     ans[]
+  quest   quest?  @relation(fields: [qid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model progress {
+  progress_id     Int                  @id @default(autoincrement())
+  user_id         Int
+  lesson_id       Int
+  status          progress_status_enum @default(no_completado)
+  completion_date DateTime?            @db.Timestamp(6)
+  lesson          lesson               @relation(fields: [lesson_id], references: [lesson_id], onDelete: NoAction, onUpdate: NoAction)
+  app_user        app_user             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model quest {
+  id         Int         @id @default(autoincrement())
+  txt        String
+  cat        String?     @db.VarChar(100)
+  lvl        String?     @db.VarChar(50)
+  lawid      Int?
+  ans        ans[]
+  opt        opt[]
+  lawarticle lawarticle? @relation(fields: [lawid], references: [id], onUpdate: NoAction)
+}
+
+model question {
+  question_id   Int                 @id @default(autoincrement())
+  question_text String?
+  question_type question_type_enum?
+  answer_option answer_option[]
+  exam_question exam_question[]
+}
+
+model reward {
+  reward_id         Int                 @id @default(autoincrement())
+  name              String?             @db.VarChar(100)
+  description       String?
+  cost_points       Int
+  reward_redemption reward_redemption[]
+}
+
+model reward_redemption {
+  redemption_id Int       @id @default(autoincrement())
+  user_id       Int
+  reward_id     Int
+  date          DateTime? @default(now()) @db.Timestamp(6)
+  reward        reward    @relation(fields: [reward_id], references: [reward_id], onDelete: NoAction, onUpdate: NoAction)
+  app_user      app_user  @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user_score {
+  score_id     Int      @id @default(autoincrement())
+  user_id      Int
+  total_points Int?     @default(0)
+  app_user     app_user @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum progress_status_enum {
+  no_completado
+  en_progreso
+  completado
+}
+
+enum question_type_enum {
+  multiple_choice
+  true_false
+  short_answer
+}
+
+enum user_role_enum {
+  admin
+  principiante
+  avanzado
+}
