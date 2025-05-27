@@ -32,9 +32,9 @@ jobs:
             --exclude='*.tmp' \
             --exclude='*.cache'
           
-          # Crear tar desde el directorio limpio
+          # Crear tar desde el directorio limpio y guardarlo en el workspace
           cd /tmp/deploy_source
-          tar -czf /github/workspace/app.tar.gz .
+          tar -czf $GITHUB_WORKSPACE/app.tar.gz .
               
       - name: Upload archive via SCP
         uses: appleboy/scp-action@v0.1.7
