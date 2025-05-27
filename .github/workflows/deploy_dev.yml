@@ -13,16 +13,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Copy files via SSH
+      - name: Archive needed files
+        run: |
+          tar --exclude='.git' \
+              --exclude='.github' \
+              --exclude='node_modules' \
+              --exclude='*.log' \
+              -czf app.tar.gz .
+
+      - name: Upload archive via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/home/ubuntu/proyectoSoftwere/dev/backend"
+          source: "app.tar.gz"
+          target: "/home/ubuntu/proyectoSoftwere/dev"
 
-      - name: Deploy via SSH
+      - name: SSH deploy & extract
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -30,6 +38,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/proyectoSoftwere/dev
+            rm -rf backend
+            mkdir -p backend
+            tar -xzf app.tar.gz -C backend
+            rm app.tar.gz
             docker compose build
             docker compose up -d
-
