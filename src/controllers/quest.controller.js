@@ -31,10 +31,6 @@ export const getOptions = async (req, res) => {
 
   const options = await prisma.opt.findMany({
     where: { qid },
-    select: {
-      id: true,
-      txt: true,
-    },
   });
 
   res.json(options);
