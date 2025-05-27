@@ -19,22 +19,24 @@ jobs:
           
       - name: Archive needed files
         run: |
-          # Crear directorio temporal limpio
-          mkdir -p /tmp/deploy_source
+          # Método más simple usando tar directamente con ignore de warnings
+          tar --exclude='.git' \
+              --exclude='.github' \
+              --exclude='node_modules' \
+              --exclude='*.log' \
+              --exclude='.DS_Store' \
+              --exclude='*.tmp' \
+              --exclude='*.cache' \
+              --ignore-failed-read \
+              -czf app.tar.gz . || true
           
-          # Copiar solo los archivos necesarios
-          rsync -av --progress . /tmp/deploy_source/ \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='*.log' \
-            --exclude='.DS_Store' \
-            --exclude='*.tmp' \
-            --exclude='*.cache'
+          # Verificar que el archivo se creó correctamente
+          if [ ! -f "app.tar.gz" ]; then
+            echo "Error: app.tar.gz no se creó"
+            exit 1
+          fi
           
-          # Crear tar desde el directorio limpio y guardarlo en el workspace
-          cd /tmp/deploy_source
-          tar -czf $GITHUB_WORKSPACE/app.tar.gz .
+          ls -la app.tar.gz
               
       - name: Upload archive via SCP
         uses: appleboy/scp-action@v0.1.7
@@ -53,9 +55,41 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/proyectoSoftwere/dev
+            
+            # Respaldar archivos específicos importantes
+            if [ -f "backend/.env" ]; then
+              cp backend/.env .env.backup
+              echo "Respaldando .env existente"
+            fi
+            
+            if [ -f "backend/.env.production" ]; then
+              cp backend/.env.production .env.production.backup
+              echo "Respaldando .env.production existente"
+            fi
+            
+            # Parar contenedores
+            docker compose down 2>/dev/null || true
+            
+            # Borrar y recrear
             rm -rf backend
             mkdir -p backend
             tar -xzf app.tar.gz -C backend
             rm app.tar.gz
+            
+            # Restaurar archivos específicos
+            if [ -f ".env.backup" ]; then
+              cp .env.backup backend/.env
+              rm .env.backup
+              echo ".env restaurado"
+            fi
+            
+            if [ -f ".env.production.backup" ]; then
+              cp .env.production.backup backend/.env.production
+              rm .env.production.backup
+              echo ".env.production restaurado"
+            fi
+            
+            # Rebuilding and starting containers
+            cd backend
             docker compose build
             docker compose up -d
