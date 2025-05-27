@@ -1,20 +1,10 @@
-// EduVial-Backend/src/routes/auth.routes.js
-const express = require('express');
-const authController = require('../controllers/auth.controller');
-const { registerRules, loginRules, validate } = require('../middlewares/validators/auth.validator');
+import { Router } from 'express';
+import { register, login } from '../controllers/auth.controller.js';
 
-const router = express.Router();
+const router = Router();
 
-// Ruta de Registro: POST /api/auth/register
-// 1. Aplica reglas de validación
-// 2. Ejecuta el middleware 'validate' para comprobar resultados
-// 3. Llama al controlador si la validación pasa
-router.post('/register', registerRules(), validate, authController.register);
+router.post('/register', register);
+router.get('/login', login);
 
-// Ruta de Login: POST /api/auth/login
-// 1. Aplica reglas de validación
-// 2. Ejecuta el middleware 'validate'
-// 3. Llama al controlador
-router.post('/login', loginRules(), validate, authController.login);
+export default router;
 
-module.exports = router;
