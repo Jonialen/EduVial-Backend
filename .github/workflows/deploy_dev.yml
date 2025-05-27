@@ -88,8 +88,6 @@ jobs:
               rm .env.production.backup
               echo ".env.production restaurado"
             fi
-            
-            # Rebuilding and starting containers
-            cd backend
+            docker compose down -v
             docker compose build
             docker compose up -d
