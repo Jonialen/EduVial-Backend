@@ -5,9 +5,10 @@
   "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/app.js",
-    "start": "node src/app.js",
-    "prisma": "prisma"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "prisma": "prisma",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +26,13 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.4",
+    "jest": "^30.0.4",
+    "jest-mock-extended": "^4.0.0",
     "nodemon": "3.1.10",
-    "standart": "6.1.0"
+    "standart": "6.1.0",
+    "supertest": "^7.1.3"
   }
 }

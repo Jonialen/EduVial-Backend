@@ -19,8 +19,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/quest', questRoutes)
 
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
-});
+
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+export default app;
