@@ -1,0 +1,57 @@
+# Resumen de la Base de Datos para el Plan de Pruebas
+
+Este documento resume las tablas principales de la base de datos que son relevantes para las pruebas de backend.
+
+## `app_user` - Tabla de Usuarios
+
+Almacena la información de los usuarios de la aplicación.
+
+- **user_id** (Int, PK): Identificador único del usuario.
+- **name** (String): Nombre del usuario.
+- **email** (String, Unique): Correo electrónico del usuario, se usa para el login.
+- **password** (String): Contraseña hasheada del usuario.
+- **role** (Enum): Rol del usuario (`admin`, `principiante`, `avanzado`).
+
+**Para las pruebas:**
+- Al probar el **login**, se debe verificar que el `email` y `password` coincidan con un registro en esta tabla.
+- La respuesta del login exitoso debería contener un token que identifique al `user_id` y `role`.
+
+## `quest` - Tabla de Preguntas
+
+Contiene las preguntas de las pruebas y lecciones.
+
+- **id** (Int, PK): Identificador único de la pregunta.
+- **txt** (String): El texto de la pregunta.
+- **cat** (String): Categoría de la pregunta.
+- **lvl** (String): Nivel de dificultad de la pregunta.
+- **lawid** (Int, FK): ID del artículo de ley relacionado.
+
+**Para las pruebas:**
+- Al probar `GET /api/pregunta/:id`, se debe buscar una pregunta por su `id`.
+- La respuesta debe contener el `id` y `txt` correctos.
+
+## `opt` - Tabla de Opciones
+
+Almacena las posibles respuestas para cada pregunta.
+
+- **id** (Int, PK): Identificador único de la opción.
+- **qid** (Int, FK): ID de la pregunta a la que pertenece esta opción.
+- **txt** (String): El texto de la opción.
+- **correct** (Boolean): Indica si la opción es la respuesta correcta.
+
+**Para las pruebas:**
+- Al probar la obtención de opciones de una pregunta, se deben devolver todas las opciones con el `qid` correspondiente.
+- Al responder una pregunta, se debe verificar si la `opt` seleccionada tiene el campo `correct` como `true` o `false`.
+
+## `ans` - Tabla de Respuestas
+
+Registra las respuestas de los usuarios a las preguntas.
+
+- **id** (Int, PK): Identificador único de la respuesta.
+- **uid** (Int, FK): ID del usuario que respondió.
+- **qid** (Int, FK): ID de la pregunta que se respondió.
+- **optid** (Int, FK): ID de la opción que se seleccionó.
+- **correct** (Boolean): Indica si la respuesta fue correcta.
+
+**Para las pruebas:**
+- Al enviar una respuesta a una pregunta, se debe crear un nuevo registro en esta tabla con los `uid`, `qid`, `optid` y el valor de `correct` correspondiente.

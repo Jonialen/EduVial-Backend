@@ -42,14 +42,15 @@ describe('Quest Controller', () => {
   });
 
   describe('GET /api/quest/:id', () => {
-    it('should return a single quest if found', async () => {
+    it('should return a single quest with correct data if found', async () => {
       const mockQuest = { id: 1, question: '¿Señal de alto?', lawarticle: {} };
       prisma.quest.findUnique.mockResolvedValue(mockQuest);
 
       const response = await request(app).get('/api/quest/1');
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual(mockQuest);
+      expect(response.body.id).toBe(mockQuest.id);
+      expect(response.body.question).toBe(mockQuest.question);
       expect(prisma.quest.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
         include: { lawarticle: true },

@@ -6,7 +6,6 @@ export const getAllQuests = async (req, res) => {
     const quests = await prisma.quest.findMany();
     res.json(quests);
   } catch (error) {
-    console.log(error)
     res.status(500).json({ error: 'Error al obtener preguntas' });
   }
 };

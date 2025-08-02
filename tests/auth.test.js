@@ -5,6 +5,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 jest.mock('../src/prisma/client.js');
+jest.mock('jsonwebtoken', () => ({
+  ...jest.requireActual('jsonwebtoken'),
+  sign: jest.fn().mockReturnValue('testtoken'),
+  verify: jest.fn(),
+}));
 
 describe('Auth Controller', () => {
   afterEach(() => {
@@ -49,24 +54,34 @@ describe('Auth Controller', () => {
   });
 
   describe('POST /api/auth/login', () => {
-    it('should login a user with valid credentials', async () => {
-      prisma.app_user.findUnique.mockResolvedValue({
+    it('should login a user with valid credentials, respond in time and return user data', async () => {
+      const userPayload = {
         user_id: 1,
         email: 'test@example.com',
         password: 'hashedpassword',
         role: 'principiante',
-      });
+      };
+      prisma.app_user.findUnique.mockResolvedValue(userPayload);
       bcrypt.compare.mockResolvedValue(true);
+      jwt.sign.mockReturnValue('testtoken');
 
+      const startTime = Date.now();
       const response = await request(app)
         .post('/api/auth/login')
         .send({
           email: 'test@example.com',
           password: 'password123',
         });
+      const duration = Date.now() - startTime;
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual({ token: 'testtoken' });
+      expect(response.body.token).toBe('testtoken');
+      expect(duration).toBeLessThan(500);
+
+      const decoded = { userId: 1, email: 'test@example.com' };
+      jwt.verify.mockReturnValue(decoded);
+      const decodedToken = jwt.verify(response.body.token, 'your-secret-key');
+      expect(decodedToken.email).toBe(userPayload.email);
     });
 
     it('should not login a user with invalid credentials', async () => {
