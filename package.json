@@ -1,6 +1,6 @@
 {
   "name": "EduVial-Backend",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "",
   "main": "src/app.js",
   "type": "module",
@@ -21,18 +21,18 @@
     "dotenv": "16.5.0",
     "express": "5.1.0",
     "jsonwebtoken": "9.0.2",
-    "prisma": "6.8.2",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-jsdoc": "6.2.8",
+    "swagger-ui-express": "5.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.0",
-    "@babel/preset-env": "^7.28.0",
-    "babel-jest": "^30.0.4",
-    "jest": "^30.0.4",
-    "jest-mock-extended": "^4.0.0",
+    "@babel/core": "7.28.3",
+    "@babel/preset-env": "7.28.3",
+    "babel-jest": "30.0.5",
+    "jest": "30.0.5",
+    "jest-mock-extended": "4.0.0",
     "nodemon": "3.1.10",
+    "prisma": "6.14.0",
     "standart": "6.1.0",
-    "supertest": "^7.1.3"
+    "supertest": "7.1.4"
   }
 }

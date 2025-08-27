@@ -19,29 +19,20 @@ model ans {
   app_user app_user? @relation(fields: [uid], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model answer_option {
-  option_id   Int      @id @default(autoincrement())
-  question_id Int
-  option_text String?
-  is_correct  Boolean?
-  question    question @relation(fields: [question_id], references: [question_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
 model app_user {
-  user_id              Int                    @id @default(autoincrement())
-  name                 String                 @db.VarChar(100)
-  email                String                 @unique @db.VarChar(100)
-  password             String                 @db.Char(60)
-  role                 user_role_enum
-  ans                  ans[]
-  exam_progress        exam_progress[]
-  exam_result          exam_result[]
-  leaderboard          leaderboard[]
-  lesson_result        lesson_result[]
-  notification_history notification_history[]
-  progress             progress[]
-  reward_redemption    reward_redemption[]
-  user_score           user_score[]
+  user_id           Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(100)
+  email             String              @unique @db.VarChar(100)
+  password          String              @db.Char(60)
+  role              user_role_enum
+  ans               ans[]
+  exam_progress     exam_progress[]
+  exam_result       exam_result[]
+  leaderboard       leaderboard[]
+  lesson_result     lesson_result[]
+  progress          progress[]
+  reward_redemption reward_redemption[]
+  user_score        user_score?
 }
 
 model exam {
@@ -51,7 +42,6 @@ model exam {
   difficulty_level difficulty_level_enum
   points_awarded   Int                   @default(0)
   exam_progress    exam_progress[]
-  exam_question    exam_question[]
   exam_result      exam_result[]
 }
 
@@ -63,15 +53,6 @@ model exam_progress {
   completion_date  DateTime?            @db.Timestamp(6)
   exam             exam                 @relation(fields: [exam_id], references: [exam_id], onDelete: NoAction, onUpdate: NoAction)
   app_user         app_user             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model exam_question {
-  exam_id     Int
-  question_id Int
-  exam        exam     @relation(fields: [exam_id], references: [exam_id], onDelete: NoAction, onUpdate: NoAction)
-  question    question @relation(fields: [question_id], references: [question_id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([exam_id, question_id])
 }
 
 model exam_result {
@@ -161,14 +142,6 @@ model log {
   details        String?
 }
 
-model notification_history {
-  notification_id Int       @id @default(autoincrement())
-  user_id         Int
-  message         String?
-  sent_date       DateTime? @db.Timestamp(6)
-  app_user        app_user  @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
 model opt {
   id      Int     @id @default(autoincrement())
   qid     Int?
@@ -189,22 +162,15 @@ model progress {
 }
 
 model quest {
-  id         Int         @id @default(autoincrement())
+  id         Int             @id @default(autoincrement())
   txt        String
-  cat        String?     @db.VarChar(100)
-  lvl        String?     @db.VarChar(50)
+  cat        String?         @db.VarChar(100)
+  lvl        String?         @db.VarChar(50)
   lawid      Int?
+  qtype      quest_type_enum @default(multiple_choice)
   ans        ans[]
   opt        opt[]
-  lawarticle lawarticle? @relation(fields: [lawid], references: [id], onUpdate: NoAction)
-}
-
-model question {
-  question_id   Int                 @id @default(autoincrement())
-  question_text String?
-  question_type question_type_enum?
-  answer_option answer_option[]
-  exam_question exam_question[]
+  lawarticle lawarticle?     @relation(fields: [lawid], references: [id], onUpdate: NoAction)
 }
 
 model reward {
@@ -226,7 +192,7 @@ model reward_redemption {
 
 model user_score {
   score_id     Int      @id @default(autoincrement())
-  user_id      Int
+  user_id      Int      @unique
   total_points Int?     @default(0)
   app_user     app_user @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -242,14 +208,13 @@ enum progress_status_enum {
   completado
 }
 
-enum question_type_enum {
-  multiple_choice
-  true_false
-  short_answer
-}
-
 enum user_role_enum {
   admin
   principiante
   avanzado
+}
+
+enum quest_type_enum {
+  multiple_choice
+  true_false
 }

@@ -1,9 +1,9 @@
-import { mockDeep, mockReset } from 'jest-mock-extended';
+import { mockDeep, mockReset } from "jest-mock-extended";
 
 const prisma = mockDeep();
 
 export const reset = () => {
-  mockReset(prisma);
+    mockReset(prisma);
 };
 
 export default prisma;
