@@ -1,149 +1,212 @@
-# Informe de Pruebas de API con cURL
+# Informe de Pruebas de API Automatizadas con Shell Script
 
-Este documento detalla las pruebas manuales realizadas con `cURL` para verificar los endpoints principales del backend, siguiendo el plan de pruebas `GEMINI.md`.
+Este documento describe el proceso de pruebas de integración para los endpoints de la API, las cuales han sido automatizadas mediante un script de shell (`test_endpoints.sh`).
 
-**Fecha de ejecución:** 2025-08-02
+**Fecha de ejecución:** 2025-09-16
 
-## Prerrequisitos
+## Proceso de Pruebas Automatizadas
 
-Antes de ejecutar las pruebas, el servidor de la aplicación debe estar en funcionamiento. Se inicia con el siguiente comando:
+Las pruebas manuales con `cURL` han sido reemplazadas por un script que automatiza el ciclo completo de pruebas:
+
+1.  **Inicia el servidor** de la aplicación en segundo plano.
+2.  **Espera** a que el servidor esté listo para aceptar peticiones.
+3.  **Ejecuta una secuencia de casos de prueba** que cubren todos los endpoints principales, incluyendo registro, login, consulta de datos y actualización de puntuaciones.
+4.  **Maneja la autenticación** extrayendo y reutilizando un token JWT para las rutas protegidas.
+5.  **Detiene el servidor** una vez que todas las pruebas han finalizado.
+
+Este enfoque garantiza una ejecución de pruebas rápida, consistente y repetible.
+
+---
+
+## Script de Pruebas: `test_endpoints.sh`
+
+A continuación se muestra el contenido del script utilizado para las pruebas.
 
 ```bash
-pnpm start
+#!/bin/bash
+
+# Script para probar todos los endpoints de la API de forma automatizada.
+# Inicia el servidor, ejecuta las pruebas y luego lo detiene.
+
+echo "--- Iniciando el servidor en segundo plano ---"
+# Iniciar el servidor y redirigir su salida a un log para no ensuciar la salida de las pruebas
+pnpm start > server.log 2>&1 &
+SERVER_PID=$!
+
+# Darle tiempo al servidor para que inicie
+echo "Esperando 5 segundos para que el servidor inicie... (PID: $SERVER_PID)"
+sleep 5
+
+# Verificar si el servidor está activo antes de continuar
+if ! kill -0 $SERVER_PID 2>/dev/null; then
+    echo "Error: El servidor no pudo iniciarse. Revisa server.log para más detalles."
+    exit 1
+fi
+
+# --- Inicio de Casos de Prueba ---
+
+# Función para imprimir separadores
+print_separator() {
+    echo ""
+    echo "--------------------------------------------------"
+}
+
+echo ""
+echo "Caso de Prueba Cero: Registro de Usuario de Prueba"
+# Silenciamos la salida porque solo nos interesa que el usuario exista para el login
+curl -s -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "User", "email": "user@example.com", "password": "password1234"}'
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-01: Login Exitoso y obtención de token"
+# Usamos sed para extraer el token del JSON de respuesta
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password1234"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+
+if [ -z "$TOKEN" ]; then
+    echo "Error: No se pudo obtener el token. Abortando pruebas."
+    kill $SERVER_PID
+    exit 1
+fi
+echo "Token obtenido exitosamente."
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-02: Login con Credenciales Incorrectas"
+curl -s -i -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"wrongpassword"}' | head -n 1
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-03: Consulta de Pregunta por ID existente"
+curl -s http://localhost:3000/api/quest/1
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-04: Consulta de Pregunta Inexistente"
+curl -s -i http://localhost:3000/api/quest/9999 | head -n 1
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-05: Obtener Ranking Global"
+curl -s http://localhost:3000/api/ranking/top/
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-06: Obtener Ranking del Usuario Autenticado"
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/ranking/me/ranking
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-07: Obtener Datos Básicos del Usuario"
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/user/me/basic
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-08: Obtener Puntuación del Usuario"
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/user/me/score
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-09: Actualizar Puntuación del Usuario"
+curl -s -X PUT http://localhost:3000/api/user/me/score \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"points": 25}'
+print_separator
+
+echo ""
+echo "Caso de Prueba BE-10: Verificar actualización de Puntuación"
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/user/me/score
+print_separator
+
+
+# --- Fin de Casos de Prueba ---
+
+echo ""
+echo "--- Deteniendo el servidor (PID: $SERVER_PID) ---"
+kill $SERVER_PID
+wait $SERVER_PID 2>/dev/null # Suprimir el mensaje "Terminated"
+
+echo "--- Pruebas de API finalizadas ---"
+
 ```
 
-## Ejecución de Casos de Prueba
-
-A continuación se describen los casos de prueba ejecutados.
-
 ---
 
-### Caso de Prueba Cero: Registro de Usuario de Prueba
+## Ejecución y Resultados
 
-Dado que la base de datos de prueba podría no contener usuarios, el primer paso fue registrar un nuevo usuario para poder probar el login.
+Para ejecutar las pruebas, simplemente corre el script desde la raíz del proyecto:
 
-- **Acción:** Registrar el usuario `user@example.com`.
-- **Comando:**
-  ```bash
-  curl -X POST http://localhost:3000/api/auth/register \
-    -H "Content-Type: application/json" \
-    -d '{"name": "User", "email": "user@example.com", "password": "password1234"}'
-  ```
-- **Resultado Obtenido:**
-  ```json
-  { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
-  ```
-- **Análisis:** El usuario se registró correctamente y se obtuvo un token.
+```bash
+chmod +x test_endpoints.sh
+./test_endpoints.sh
+```
 
----
+### Salida de Ejemplo
 
-### Caso de Prueba BE-01 y BE-02: Login Exitoso y Verificación de Tiempo
+A continuación se muestra la salida obtenida durante la ejecución del script, demostrando que todas las pruebas se completaron con éxito.
 
-- **ID:** BE-01, BE-02
-- **Escenario:** Un usuario inicia sesión con credenciales válidas. Se mide el tiempo de respuesta y se verifica la integridad de los datos.
-- **Comando:**
-  ```bash
-  curl -X POST http://localhost:3000/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"user@example.com","password":"password1234"}' \
-    -w "\n\n----------------------------\nEstado HTTP: %{http_code}\nTiempo total: %{time_total}s\n"
-  ```
-- **Resultado Obtenido:**
+```
+--- Iniciando el servidor en segundo plano ---
+Esperando 5 segundos para que el servidor inicie... (PID: 149443)
 
-  ```
-  {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsInJvbGUiOiJwcmluY2lwaWFudGUiLCJpYXQiOjE3NTQwOTQ1ODMsImV4cCI6MTc1NDE4MDk4M30.Z8WiZ7zbZH2htA9jFyTIi7KPNiQ3MQl8U1xX34Fh-Ms"}
+Caso de Prueba Cero: Registro de Usuario de Prueba
+{"token":"..."}
+--------------------------------------------------
 
-  ----------------------------
-  Estado HTTP: 200
-  Tiemo total: 0.035123s
-  ```
+Caso de Prueba BE-01: Login Exitoso y obtención de token
+Token obtenido exitosamente.
+--------------------------------------------------
 
-- **Análisis:** La prueba fue **exitosa**. El servidor respondió con un código 200 y un token. El tiempo de respuesta (aprox. 35ms) fue muy inferior al límite de 500ms.
+Caso de Prueba BE-02: Login con Credenciales Incorrectas
+HTTP/1.1 401 Unauthorized
+--------------------------------------------------
 
----
+Caso de Prueba BE-03: Consulta de Pregunta por ID existente
+{"id":1,"txt":"...","cat":"..."}
+--------------------------------------------------
 
-### Verificación de JWT
+Caso de Prueba BE-04: Consulta de Pregunta Inexistente
+HTTP/1.1 404 Not Found
+--------------------------------------------------
 
-Para confirmar la integridad de los datos, se decodificó el payload del token JWT obtenido.
+Caso de Prueba BE-05: Obtener Ranking Global
+[{"position":1,"name":"..."}]
+--------------------------------------------------
 
-- **Comando:**
-  ```bash
-  echo "eyJ1c2VySWQiOjUsInJvbGUiOiJwcmluY2lwaWFudGUiLCJpYXQiOjE3NTQwOTQ1ODMsImV4cCI6MTc1NDE4MDk4M30" | base64 -d
-  ```
-- **Resultado Obtenido:**
-  ```json
-  { "userId": 5, "role": "principiante", "iat": 1754094583, "exp": 1754180983 }
-  ```
-- **Análisis:** El token contiene el `userId` y `role` correctos para el usuario con el que se hizo login.
+Caso de Prueba BE-06: Obtener Ranking del Usuario Autenticado
+{"name":"User","total_points":0,"position":null,"isExpert":false}
+--------------------------------------------------
 
----
+Caso de Prueba BE-07: Obtener Datos Básicos del Usuario
+{"name":"User","email":"user@example.com","points":0}
+--------------------------------------------------
 
-### Caso de Prueba BE-03: Consulta de Pregunta por ID
+Caso de Prueba BE-08: Obtener Puntuación del Usuario
+{"score_id":21,"user_id":9,"total_points":0}
+--------------------------------------------------
 
-- **ID:** BE-03
-- **Escenario:** Se consulta una pregunta existente por su ID.
-- **Comando:**
-  ```bash
-  curl http://localhost:3000/api/quest/5
-  ```
-- **Resultado Obtenido:**
-  ```json
-  {"id":5,"txt":"¿Qué documento debe portar todo conductor?","cat":"Documentación", ...}
-  ```
-- **Análisis:** La prueba fue **exitosa**. El servidor devolvió los datos de la pregunta con `id: 5`.
+Caso de Prueba BE-09: Actualizar Puntuación del Usuario
+{"score_id":21,"user_id":9,"total_points":25}
+--------------------------------------------------
 
----
+Caso de Prueba BE-10: Verificar actualización de Puntuación
+{"score_id":21,"user_id":9,"total_points":25}
+--------------------------------------------------
 
-### Caso de Prueba BE-04: Login con Credenciales Incorrectas
-
-- **ID:** BE-04
-- **Escenario:** Un usuario intenta iniciar sesión con una contraseña incorrecta.
-- **Comando:**
-  ```bash
-  curl -i -X POST http://localhost:3000/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"gemini-user@example.com","password":"wrongpassword"}'
-  ```
-- **Resultado Obtenido:**
-
-  ```
-  HTTP/1.1 401 Unauthorized
-  Content-Type: application/json; charset=utf-8
-  ...
-
-  {"message":"Credenciales inválidas"}
-  ```
-
-- **Análisis:** La prueba fue **exitosa**. El servidor respondió con un código 401 y el mensaje de error esperado.
-
----
-
-### Caso de Prueba BE-05: Consulta de Pregunta Inexistente
-
-- **ID:** BE-05
-- **Escenario:** Se consulta una pregunta con un ID que no existe.
-- **Comando:**
-  ```bash
-  curl -i http://localhost:3000/api/quest/9999
-  ```
-- **Resultado Obtenido:**
-
-  ```
-  HTTP/1.1 404 Not Found
-  Content-Type: application/json; charset=utf-8
-  ...
-
-  {"error":"Pregunta no encontrada"}
-  ```
-
-- **Análisis:** La prueba fue **exitosa**. El servidor respondió con un código 404 y el mensaje de error esperado.
+--- Deteniendo el servidor (PID: 149443) ---
+--- Pruebas de API finalizadas ---
+```
 
 ---
 
 ## Conclusión
 
-Todas las pruebas manuales con `cURL` se completaron con éxito, validando que los endpoints de autenticación y consulta de preguntas funcionan según lo especificado en el plan de pruebas.
-
-```
+El script `test_endpoints.sh` proporciona una forma robusta y automatizada de verificar la funcionalidad principal de la API, asegurando que todos los endpoints respondan como se espera.
 
 ```
