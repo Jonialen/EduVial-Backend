@@ -70,12 +70,12 @@ export const getUserRanking = async (req, res) => {
                 total_points: { gt: score.total_points },
             },
         });
-
-        const position = higherCount + 1;
+        const total_points = score.total_points;
+        const position = total_points === 0 ? null : higherCount + 1;
 
         res.json({
             name: score.app_user.name,
-            total_points: score.total_points === 0 ? null : score.total_points,
+            total_points: total_points,
             position,
             isExpert: score.app_user.role === "avanzado",
         });
