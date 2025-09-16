@@ -75,7 +75,7 @@ export const getUserRanking = async (req, res) => {
 
         res.json({
             name: score.app_user.name,
-            total_points: score.total_points,
+            total_points: score.total_points === 0 ? null : score.total_points,
             position,
             isExpert: score.app_user.role === "avanzado",
         });

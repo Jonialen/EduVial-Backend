@@ -1,10 +1,8 @@
-Se regeneraron los esquemas de Prisma y la base de datos para ajustar las relaciones y asegurar que cada usuario tenga un único registro de user_score (user_id @unique).
+Se regeneraron los esquemas de Prisma y la base de datos para ajustar las relaciones y asegurar que cada usuario tenga un único registro en user_score (user_id @unique).
 
 Se corrigió la tabla user_score en la base de datos y se resolvieron problemas con los IDs autoincrementales (SERIAL), eliminando inserciones manuales y reseteando secuencias.
 
-Se implementaron los endpoints de score:
-	- GET /api/user/me/score → obtener el puntaje actual del usuario.
-	- PUT /api/user/me/score → actualizar (sumar/restar) puntos del usuario.
+Se implementaron los endpoints de score y ranking:
+    - GET /api/ranking/top → obtener el ranking general de los usuarios, con soporte para parámetro opcional limit y filtro por expertos (?limit=30&expert=true).
 
-Se implementó el endpoint de usuario:
-	- GET /api/user/me → obtener datos básicos del usuario autenticado (name, email, points).
+    -GET /api/ranking/me/ranking → obtener la posición del usuario autenticado en el ranking, su puntaje y si es experto.
