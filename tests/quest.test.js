@@ -1,13 +1,15 @@
 import request from "supertest";
 import app from "../src/app.js";
 import prisma from "../src/prisma/client.js";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../src/middlewares/auth.middleware.js";
 
 jest.mock("../src/prisma/client.js");
-jest.mock("jsonwebtoken", () => ({
-    ...jest.requireActual("jsonwebtoken"), // import and retain the original functionalities
-    sign: jest.fn().mockReturnValue("test-token"),
-    verify: jest.fn().mockReturnValue({ userId: 1, role: "principiante" }),
+jest.mock("../src/middlewares/auth.middleware.js", () => ({
+    ...jest.requireActual("../src/middlewares/auth.middleware.js"),
+    verifyToken: jest.fn((req, res, next) => {
+        req.user = { userId: 1, role: "principiante" };
+        next();
+    }),
 }));
 
 describe("Quest Controller", () => {
@@ -83,12 +85,6 @@ describe("Quest Controller", () => {
     });
 
     describe("POST /api/quest/:id/answer", () => {
-        let token;
-
-        beforeEach(() => {
-            token = jwt.sign({ userId: 1, role: "principiante" }, "testsecret");
-        });
-
         it("should save a correct answer", async () => {
             prisma.opt.findUnique.mockResolvedValue({ id: 1, correct: true });
             const mockAnswer = { id: 1, uid: 1, qid: 1, optid: 1, correct: true };
@@ -96,7 +92,7 @@ describe("Quest Controller", () => {
 
             const response = await request(app)
                 .post("/api/quest/1/answer")
-                .set("Authorization", `Bearer ${token}`)
+                .set("Authorization", `Bearer testtoken`)
                 .send({ optid: 1 });
 
             expect(response.statusCode).toBe(201);
@@ -109,6 +105,7 @@ describe("Quest Controller", () => {
                     correct: true,
                 },
             });
+            expect(verifyToken).toHaveBeenCalled();
         });
 
         it("should return 400 for an invalid option", async () => {
@@ -116,11 +113,12 @@ describe("Quest Controller", () => {
 
             const response = await request(app)
                 .post("/api/quest/1/answer")
-                .set("Authorization", `Bearer ${token}`)
+                .set("Authorization", `Bearer testtoken`)
                 .send({ optid: 99 });
 
             expect(response.statusCode).toBe(400);
             expect(response.body).toEqual({ error: "Opción inválida" });
+            expect(verifyToken).toHaveBeenCalled();
         });
     });
 });

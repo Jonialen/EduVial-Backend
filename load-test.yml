@@ -1,0 +1,26 @@
+config:
+  target: "http://localhost:3000/api"
+  phases:
+    - duration: 120
+      arrivalRate: 100
+      name: "Fase de registro y carga"
+
+scenarios:
+  - name: "Registrar usuario y consultar preguntas"
+    flow:
+      # 1. Registrar un nuevo usuario y capturar el token de la respuesta
+      - post:
+          url: "/auth/register"
+          json:
+            name: "TestUser_{{ $randomString() }}"
+            email: "user_{{ $randomString() }}@test.com"
+            password: "password123"
+          capture:
+            - json: "$.token"
+              as: "token"
+
+      # 2. Usar el token para acceder a un endpoint protegido
+      - get:
+          url: "/quest"
+          headers:
+            Authorization: "Bearer {{ token }}"

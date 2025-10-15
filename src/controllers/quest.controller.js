@@ -59,3 +59,20 @@ export const answerQuestion = async (req, res) => {
 
     res.status(201).json(answer);
 };
+
+export const searchQuests = async (req, res) => {
+    const { search } = req.query;
+
+    try {
+        const quests = await prisma.quest.findMany({
+            where: {
+                question: {
+                    contains: search,
+                },
+            },
+        });
+        res.json(quests);
+    } catch (error) {
+        res.status(500).json({ error: "Error al buscar preguntas" });
+    }
+};

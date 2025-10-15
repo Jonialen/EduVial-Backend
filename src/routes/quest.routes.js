@@ -4,6 +4,7 @@ import {
     getQuest,
     getOptions,
     answerQuestion,
+    searchQuests,
 } from "../controllers/quest.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -18,6 +19,7 @@ const router = Router();
  *         description: Lista de preguntas
  */
 router.get("/", getAllQuests);
+router.get("/search", searchQuests);
 router.get("/:id", getQuest);
 router.get("/:id/options", getOptions);
 router.post("/:id/answer", verifyToken, answerQuestion);

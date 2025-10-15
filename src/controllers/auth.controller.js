@@ -10,6 +10,10 @@ export const register = async (req, res) => {
     try {
         const { email, password, name, role = "principiante" } = req.body;
 
+        if (password.length < 8) {
+            return res.status(400).json({ message: "La contraseña es demasiado débil" });
+        }
+
         const existing = await prisma.app_user.findUnique({ where: { email } });
         if (existing)
             return res.status(400).json({ message: "Email ya registrado" });
