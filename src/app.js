@@ -26,11 +26,12 @@ app.use(express.json());
 
 // Rate limiting to prevent brute-force attacks
 const loginLimiter = rateLimit({
-	windowMs: 1 * 60 * 1000, // 1 minute
-	max: 10, // Limit each IP to 10 requests per windowMs
-	standardHeaders: true,
-	legacyHeaders: false,
-	message: "Too many login attempts from this IP, please try again after a minute",
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 10, // Limit each IP to 10 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message:
+        "Too many login attempts from this IP, please try again after a minute",
 });
 
 // Montar las rutas
@@ -39,6 +40,7 @@ app.use(`${baseURL}/quest`, questRoutes);
 app.use(`${baseURL}/user`, userRoutes);
 app.use(`${baseURL}/user`, scoreRoutes);
 app.use(`${baseURL}/ranking`, rankingRoutes);
+app.use(`${baseURL}/laws`, lawRoutes);
 // Documentación con Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
