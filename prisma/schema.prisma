@@ -71,6 +71,8 @@ model lawartcat {
   catid      Int?
   lawarticle lawarticle? @relation(fields: [artid], references: [id], onDelete: Cascade, onUpdate: NoAction)
   lawcat     lawcat?     @relation(fields: [catid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([artid, catid], map: "uq_lawartcat")
 }
 
 model lawarticle {
@@ -142,6 +144,7 @@ model log {
   details        String?
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model opt {
   id      Int     @id @default(autoincrement())
   qid     Int?
@@ -161,6 +164,7 @@ model progress {
   app_user        app_user             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model quest {
   id         Int             @id @default(autoincrement())
   txt        String
