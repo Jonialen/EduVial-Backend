@@ -86,16 +86,37 @@ export const getLawsByCategory = async (req, res) => {
 
 // 3. Obtener leyes con filtros dinámicos
 export const getLawsByFilter = async (req, res) => {
-  const { artnum, title, sanc } = req.query;
-  const filters = {};
+  const { article, title, sanc, search } = req.query;
+  const where = {};
+  const andConditions = [];
 
-  if (artnum) filters.artnum = { equals: artnum, mode: 'insensitive' };
-  if (title) filters.title = { contains: title, mode: 'insensitive' };
-  if (sanc) filters.sanc = { contains: sanc, mode: 'insensitive' };
+  if (article) {
+    andConditions.push({ artnum: { equals: article, mode: 'insensitive' } });
+  }
+  if (title) {
+    andConditions.push({ title: { contains: title, mode: 'insensitive' } });
+  }
+  if (sanc) {
+    andConditions.push({ sanc: { contains: sanc, mode: 'insensitive' } });
+  }
+
+  if (search) {
+    andConditions.push({
+      OR: [
+        { title: { contains: search, mode: 'insensitive' } },
+        { descr: { contains: search, mode: 'insensitive' } },
+        { sanc: { contains: search, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
+  }
 
   try {
     const laws = await prisma.lawarticle.findMany({
-      where: filters,
+      where,
        include: {
         lawartcat: {
           include: {
@@ -152,9 +173,13 @@ export const getAvailableFilters = (req, res) => {
   const filtersInfo = {
     message: "Filtros disponibles para el endpoint GET /api/laws/filter. Combina los parámetros que necesites.",
     filters: {
-      artnum: {
+      search: {
+        description: "Búsqueda de texto libre en título, descripción y sanción (búsqueda parcial, insensible a mayúsculas).",
+        example: "/api/laws/filter?search=estacionamiento"
+      },
+      article: {
         description: "Filtrar por número de artículo (búsqueda exacta, insensible a mayúsculas).",
-        example: "/api/laws/filter?artnum=45"
+        example: "/api/laws/filter?article=45"
       },
       title: {
         description: "Filtrar por palabras en el título (búsqueda parcial, insensible a mayúsculas).",

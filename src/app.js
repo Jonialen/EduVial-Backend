@@ -38,9 +38,11 @@ const loginLimiter = rateLimit({
 app.use(`${baseURL}/auth`, authRoutes);
 app.use(`${baseURL}/quest`, questRoutes);
 app.use(`${baseURL}/user`, userRoutes);
-app.use(`${baseURL}/user`, scoreRoutes);
+app.use(`${baseURL}/score`, scoreRoutes);
 app.use(`${baseURL}/ranking`, rankingRoutes);
 app.use(`${baseURL}/laws`, lawRoutes);
+app.use(`${baseURL}/admin`, adminRoutes);
+
 // Documentación con Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

@@ -42,7 +42,7 @@ describe('Law Endpoints', () => {
       expect(res.statusCode).toEqual(200);
       expect(res.body).toHaveProperty('message');
       expect(res.body).toHaveProperty('filters');
-      expect(res.body.filters).toHaveProperty('artnum');
+      expect(res.body.filters).toHaveProperty('article');
       expect(res.body.filters).toHaveProperty('title');
       expect(res.body.filters).toHaveProperty('sanc');
     });
