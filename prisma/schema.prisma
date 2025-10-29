@@ -33,6 +33,7 @@ model app_user {
   progress          progress[]
   reward_redemption reward_redemption[]
   user_score        user_score?
+  user_streak       user_streak?
 }
 
 model exam {
@@ -144,7 +145,6 @@ model log {
   details        String?
 }
 
-/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model opt {
   id      Int     @id @default(autoincrement())
   qid     Int?
@@ -164,7 +164,6 @@ model progress {
   app_user        app_user             @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model quest {
   id         Int             @id @default(autoincrement())
   txt        String
@@ -201,6 +200,14 @@ model user_score {
   app_user     app_user @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+model user_streak {
+  user_id            Int       @id
+  current_streak     Int       @default(0)
+  longest_streak     Int       @default(0)
+  last_activity_date DateTime? @db.Date
+  app_user           app_user  @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
 enum difficulty_level_enum {
   simple
   advanced
@@ -212,13 +219,13 @@ enum progress_status_enum {
   completado
 }
 
+enum quest_type_enum {
+  multiple_choice
+  true_false
+}
+
 enum user_role_enum {
   admin
   principiante
   avanzado
-}
-
-enum quest_type_enum {
-  multiple_choice
-  true_false
 }

@@ -12,6 +12,7 @@ import swaggerSpec from "./config/swagger.js";
 import rankingRoutes from "./routes/ranking.routes.js";
 import lawRoutes from "./routes/law.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import streakRoutes from "./routes/streak.routes.js";
 
 dotenv.config(); // Carga variables de .env
 
@@ -42,6 +43,7 @@ app.use(`${baseURL}/score`, scoreRoutes);
 app.use(`${baseURL}/ranking`, rankingRoutes);
 app.use(`${baseURL}/laws`, lawRoutes);
 app.use(`${baseURL}/admin`, adminRoutes);
+app.use(`${baseURL}/streak`, streakRoutes);
 
 // Documentación con Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
