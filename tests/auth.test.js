@@ -4,7 +4,17 @@ import prisma from "../src/prisma/client.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-jest.mock("../src/prisma/client.js");
+jest.mock("../src/prisma/client.js", () => ({
+    __esModule: true,
+    default: {
+        $queryRaw: jest.fn(),
+        $queryRawUnsafe: jest.fn(),
+        app_user: {
+            findUnique: jest.fn(),
+            create: jest.fn(),
+        },
+    },
+}));
 jest.mock("jsonwebtoken", () => ({
     ...jest.requireActual("jsonwebtoken"),
     sign: jest.fn().mockReturnValue("testtoken"),
@@ -60,6 +70,8 @@ describe("Auth Controller", () => {
                 role: "principiante",
             };
             prisma.app_user.findUnique.mockResolvedValue(userPayload);
+            prisma.$queryRaw.mockResolvedValue([{ current_streak: 1, longest_streak: 1 }]);
+            prisma.$queryRawUnsafe.mockResolvedValue([{ current_streak: 1, longest_streak: 1 }]);
             bcrypt.compare.mockResolvedValue(true);
             jwt.sign.mockReturnValue("testtoken");
 
@@ -72,6 +84,7 @@ describe("Auth Controller", () => {
 
             expect(response.statusCode).toBe(200);
             expect(response.body.token).toBe("testtoken");
+            expect(response.body.streak).toEqual({ current_streak: 1, longest_streak: 1 });
             expect(duration).toBeLessThan(500);
 
             const decoded = { userId: 1, email: "test@example.com" };

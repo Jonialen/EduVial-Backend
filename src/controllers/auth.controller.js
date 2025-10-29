@@ -55,13 +55,17 @@ export const login = async (req, res) => {
         if (!isValid)
             return res.status(401).json({ message: "Credenciales inválidas" });
 
+        const streakResult = await prisma.$queryRawUnsafe(
+            `SELECT * FROM bump_daily_streak(${user.user_id.toString()})`,
+        );
+
         const token = jwt.sign(
             { userId: user.user_id, role: user.role },
             JWT_SECRET,
             { expiresIn: "1d" },
         );
 
-        res.json({ token });
+        res.json({ token, streak: streakResult[0] });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Error al iniciar sesión" });
