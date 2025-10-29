@@ -1,6 +1,6 @@
 {
   "name": "EduVial-Backend",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "",
   "main": "src/app.js",
   "type": "module",
@@ -13,9 +13,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.18.3",
+  "packageManager": "pnpm@10.19.0",
   "dependencies": {
-    "@prisma/client": "6.17.1",
+    "@prisma/client": "6.18.0",
     "bcrypt": "6.0.0",
     "cors": "2.8.5",
     "dotenv": "16.5.0",
@@ -33,7 +33,7 @@
     "jest": "30.0.5",
     "jest-mock-extended": "4.0.0",
     "nodemon": "3.1.10",
-    "prisma": "6.17.1",
+    "prisma": "6.18.0",
     "standart": "6.1.0",
     "supertest": "7.1.4"
   }
