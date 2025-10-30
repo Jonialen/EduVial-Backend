@@ -11,7 +11,9 @@ export const register = async (req, res) => {
         const { email, password, name, role = "principiante" } = req.body;
 
         if (password.length < 8) {
-            return res.status(400).json({ message: "La contraseña es demasiado débil" });
+            return res
+                .status(400)
+                .json({ message: "La contraseña es demasiado débil" });
         }
 
         const existing = await prisma.app_user.findUnique({ where: { email } });
@@ -55,9 +57,9 @@ export const login = async (req, res) => {
         if (!isValid)
             return res.status(401).json({ message: "Credenciales inválidas" });
 
-        const streakResult = await prisma.$queryRawUnsafe(
-            `SELECT * FROM bump_daily_streak(${user.user_id.toString()})`,
-        );
+        // Convertir a INT explícitamente
+        const streakResult =
+            await prisma.$queryRaw`SELECT * FROM bump_daily_streak(${parseInt(user.user_id)}::int)`;
 
         const token = jwt.sign(
             { userId: user.user_id, role: user.role },

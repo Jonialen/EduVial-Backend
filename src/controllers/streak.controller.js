@@ -25,15 +25,17 @@ export const getStreak = async (req, res) => {
 };
 
 export const bumpStreak = async (req, res) => {
-  try {
-    const { userId } = req.user
-    const streak = await prisma.$queryRaw`SELECT * FROM bump_daily_streak(${userId})`
-    res.json(streak[0])
-  } catch (error) {
-    console.error("Error in bumpStreak:", error);
-    res.status(500).json({ error: "Error al actualizar la racha" });
-  }
-}
+    try {
+        const { userId } = req.user;
+        // Convertir a INT explícitamente
+        const streak =
+            await prisma.$queryRaw`SELECT * FROM bump_daily_streak(${parseInt(userId)}::int)`;
+        res.json(streak[0]);
+    } catch (error) {
+        console.error("Error in bumpStreak:", error);
+        res.status(500).json({ error: "Error al actualizar la racha" });
+    }
+};
 
 export const getStreakRanking = async (req, res) => {
     try {
